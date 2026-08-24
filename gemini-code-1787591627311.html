@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>iRefurb Pro - Certified Pre-Owned iPhones</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- PayPal SDK -->
+  <script src="https://www.paypal.com/sdk/js?client-id=BAAEd2B9s-N6eFRxVC1BozlBPxQYTHVaXClIdZAx9Ih-XYlbZaUmbkT1iI-ghubtV278MQxm2mM1OJ4_tA&currency=USD"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
+  <style>
+    .scratch-container { touch-action: none; }
+    canvas { cursor: pointer; touch-action: none; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans antialiased min-h-screen flex flex-col justify-between">
+
+  <!-- TOP NAVBAR -->
+  <header class="bg-slate-900 text-white sticky top-0 z-40 border-b border-slate-800 shadow-xl">
+    <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3 cursor-pointer" onclick="showView('store')">
+        <div class="bg-blue-600 p-2 rounded-xl text-white shadow-lg">
+          <i class="fa-brands fa-apple text-2xl"></i>
+        </div>
+        <span class="text-2xl font-black tracking-tight">iRefurb<span class="text-blue-500">.</span></span>
+      </div>
+
+      <div class="flex items-center space-x-4">
+        <button onclick="showView('store')" class="text-sm font-semibold hover:text-blue-400 transition px-3 py-2">Store</button>
+        <button onclick="scrollToSupport()" class="text-sm font-semibold hover:text-blue-400 transition px-3 py-2">Help Center</button>
+        <button onclick="handleAdminAccess()" class="text-sm font-semibold bg-slate-800 hover:bg-slate-700 px-4 py-2 rounded-xl text-slate-200 border border-slate-700">
+          <i class="fa-solid fa-lock text-xs mr-2 text-blue-400"></i>Admin
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- SCRATCH CARD POPUP -->
+  <div id="scratch-modal" class="fixed inset-0 bg-slate-900/80 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white p-6 rounded-3xl max-w-sm w-full text-center shadow-2xl relative border border-slate-100">
+      <h3 class="text-2xl font-black text-slate-900">🎁 Lucky Scratch & Win!</h3>
+      <p class="text-xs text-slate-500 mt-1 mb-4">Scratch below to reveal your exclusive discount coupon!</p>
+      
+      <div class="relative w-64 h-32 mx-auto rounded-2xl overflow-hidden shadow-inner border border-slate-200 flex items-center justify-center bg-gradient-to-r from-amber-400 to-amber-600 text-white font-black text-3xl">
+        <span id="coupon-value-text">$80 OFF</span>
+        <canvas id="scratch-canvas" width="256" height="128" class="absolute top-0 left-0"></canvas>
+      </div>
+
+      <div id="coupon-revealed-box" class="hidden mt-4">
+        <div class="bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-bold p-2.5 rounded-xl">
+          Coupon Unlocked: <span id="revealed-code" class="text-sm font-mono font-black text-emerald-600">SAVE80</span>
+        </div>
+        <button onclick="applyRevealedCoupon()" class="mt-3 w-full bg-slate-900 hover:bg-blue-600 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition">
+          Claim & Shop Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- STOREFRONT VIEW -->
+  <main id="store-view" class="flex-grow max-w-7xl mx-auto px-6 py-8 w-full">
+    <div class="bg-slate-900 text-white rounded-3xl p-6 md:p-10 mb-8 shadow-2xl border border-slate-800 grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+      <div>
+        <span class="bg-blue-500/20 text-blue-300 border border-blue-400/30 text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">Certified Refurbished</span>
+        <h1 class="text-4xl md:text-5xl font-black mt-4 leading-tight">Premium Devices. Zero Compromise.</h1>
+        <p class="mt-3 text-slate-300 text-sm">Every device undergoes 40+ hardware inspections. Guaranteed battery health & 12-month warranty.</p>
+        <div class="mt-6">
+          <input type="text" id="search-input" onkeyup="filterProducts()" placeholder="Search model (e.g. iPhone 15 Pro)..." class="px-5 py-3 rounded-xl text-slate-900 bg-white focus:outline-none w-full shadow font-medium text-sm">
+        </div>
+      </div>
+
+      <div id="promo-video-container" class="w-full aspect-video rounded-2xl overflow-hidden bg-black shadow-lg border border-slate-700 flex items-center justify-center">
+      </div>
+    </div>
+
+    <!-- TRUST BADGES -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div class="bg-blue-50 text-blue-600 p-3.5 rounded-xl text-xl"><i class="fa-solid fa-shield-halved"></i></div>
+        <div>
+          <h4 class="font-bold text-slate-900 text-sm">1-Year Full Warranty</h4>
+          <p class="text-xs text-slate-500">Free repairs or replacement coverage.</p>
+        </div>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div class="bg-emerald-50 text-emerald-600 p-3.5 rounded-xl text-xl"><i class="fa-solid fa-truck-fast"></i></div>
+        <div>
+          <h4 class="font-bold text-slate-900 text-sm">Express Shipping</h4>
+          <p class="text-xs text-slate-500">Insured delivery with full tracking.</p>
+        </div>
+      </div>
+      <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm flex items-center space-x-4">
+        <div class="bg-purple-50 text-purple-600 p-3.5 rounded-xl text-xl"><i class="fa-solid fa-rotate-left"></i></div>
+        <div>
+          <h4 class="font-bold text-slate-900 text-sm">30-Day Money Back</h4>
+          <p class="text-xs text-slate-500">Hassle-free returns if unsatisfied.</p>
+        </div>
+      </div>
+    </div>
+
+    <h2 class="text-2xl font-black mb-6 text-slate-900 tracking-tight">Available Listings</h2>
+    <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8 mb-16">
+    </div>
+
+    <!-- CUSTOMER SUPPORT & FAQ SECTION -->
+    <section id="support-section" class="bg-white rounded-3xl p-8 border border-slate-200 shadow-sm mb-12">
+      <div class="max-w-3xl mx-auto">
+        <div class="text-center mb-8">
+          <span class="text-xs font-bold uppercase tracking-wider text-blue-600 bg-blue-50 px-3 py-1 rounded-full">Help & Support</span>
+          <h2 class="text-3xl font-black text-slate-900 mt-2">Frequently Asked Questions</h2>
+          <p class="text-xs text-slate-500 mt-1">Have questions before buying? We're here to help.</p>
+        </div>
+
+        <div class="space-y-4">
+          <div class="border border-slate-200 rounded-2xl p-4">
+            <h3 class="font-bold text-slate-900 text-sm flex justify-between items-center cursor-pointer" onclick="toggleFaq(1)">
+              <span>What condition are these iPhones in?</span>
+              <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+            </h3>
+            <p id="faq-1" class="text-xs text-slate-500 mt-2 hidden leading-relaxed">
+              All devices undergo a rigorous 40+ point hardware inspection. They are 100% fully functional with clean IMEI numbers, factory unlocked, and feature authentic screens and fresh batteries (90%+ capacity guaranteed).
+            </p>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl p-4">
+            <h3 class="font-bold text-slate-900 text-sm flex justify-between items-center cursor-pointer" onclick="toggleFaq(2)">
+              <span>How does shipping and payment work?</span>
+              <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+            </h3>
+            <p id="faq-2" class="text-xs text-slate-500 mt-2 hidden leading-relaxed">
+              Payments are securely processed via PayPal (Cards or PayPal balance). Orders are dispatched within 24 hours with full courier tracking sent directly to your email address.
+            </p>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl p-4">
+            <h3 class="font-bold text-slate-900 text-sm flex justify-between items-center cursor-pointer" onclick="toggleFaq(3)">
+              <span>What if I need to return my device?</span>
+              <i class="fa-solid fa-chevron-down text-xs text-slate-400"></i>
+            </h3>
+            <p id="faq-3" class="text-xs text-slate-500 mt-2 hidden leading-relaxed">
+              We offer a 30-day money-back guarantee. If you experience any technical issues or are unhappy with your device, simply contact support at irefurb146@gmail.com for assistance.
+            </p>
+          </div>
+        </div>
+
+        <div class="mt-8 pt-6 border-t border-slate-100 flex flex-col sm:flex-row justify-between items-center bg-slate-50 p-4 rounded-2xl gap-4">
+          <div>
+            <h4 class="font-bold text-slate-900 text-sm">Still have questions?</h4>
+            <p class="text-xs text-slate-500">Reach out directly via phone or email.</p>
+          </div>
+          <button onclick="openInfoModal('contact')" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-5 py-2.5 rounded-xl text-xs transition">
+            <i class="fa-solid fa-envelope mr-1.5"></i> Contact Support
+          </button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ADMIN VIEW -->
+  <main id="admin-view" class="flex-grow max-w-7xl mx-auto px-6 py-8 w-full hidden">
+    <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 border-b border-slate-200 pb-5 gap-4">
+      <div>
+        <h1 class="text-3xl font-black text-slate-900">Admin Dashboard</h1>
+        <p class="text-sm text-slate-500">Manage store listings, coupons, promotional video, and customer orders.</p>
+      </div>
+      <div class="flex space-x-3">
+        <button onclick="resetAdminPassword()" class="text-xs bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-4 py-2.5 rounded-xl transition">
+          <i class="fa-solid fa-key mr-1"></i> Reset Password
+        </button>
+        <button onclick="showView('store')" class="text-xs bg-slate-900 hover:bg-slate-800 text-white font-bold px-4 py-2.5 rounded-xl transition">Exit Admin</button>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div class="space-y-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h2 class="text-lg font-bold mb-4 text-slate-900"><i class="fa-solid fa-plus text-blue-600 mr-2"></i> Add Device Listing</h2>
+          <form id="add-product-form" onsubmit="handleProductAdd(event)" class="space-y-3">
+            <input type="text" id="p-name" placeholder="Model Name (e.g. iPhone 15 Pro)" required class="w-full border p-2.5 text-sm rounded-xl outline-none">
+            <div class="grid grid-cols-2 gap-2">
+              <input type="text" id="p-storage" placeholder="Storage (e.g. 256GB)" required class="w-full border p-2.5 text-sm rounded-xl outline-none">
+              <input type="text" id="p-color" placeholder="Color" required class="w-full border p-2.5 text-sm rounded-xl outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <input type="number" step="0.01" id="p-price" placeholder="Price ($ USD)" required class="w-full border p-2.5 text-sm rounded-xl outline-none">
+              <select id="p-rating" class="w-full border p-2.5 text-sm rounded-xl bg-white outline-none">
+                <option value="5.0">5.0 ★★★★★</option>
+                <option value="4.8">4.8 ★★★★☆</option>
+              </select>
+            </div>
+            <select id="p-condition" class="w-full border p-2.5 text-sm rounded-xl bg-white outline-none">
+              <option value="Like New (95%+ Battery)">Like New (95%+ Battery)</option>
+              <option value="Excellent (90%+ Battery)">Excellent (90%+ Battery)</option>
+            </select>
+            
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">Upload Multiple Images</label>
+              <input type="file" id="p-files" multiple accept="image/*" onchange="convertMultipleImagesToBase64()" class="w-full text-xs text-slate-500 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 cursor-pointer">
+            </div>
+            <button type="submit" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-sm transition">Upload Product</button>
+          </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h2 class="text-lg font-bold mb-3 text-slate-900"><i class="fa-solid fa-ticket text-emerald-600 mr-2"></i> Create Coupon Code</h2>
+          <form onsubmit="handleCouponCreate(event)" class="space-y-3">
+            <input type="text" id="c-code" placeholder="Coupon Code (e.g. VIP100)" required class="w-full border p-2.5 text-sm rounded-xl outline-none font-mono uppercase">
+            <input type="number" step="0.01" id="c-discount" placeholder="Discount Amount ($ USD)" required class="w-full border p-2.5 text-sm rounded-xl outline-none">
+            <div>
+              <label class="block text-xs font-bold text-slate-500 mb-1">Expiry Date</label>
+              <input type="date" id="c-expiry" required class="w-full border p-2.5 text-sm rounded-xl outline-none">
+            </div>
+            <button type="submit" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider transition">
+              Create & Publish Coupon
+            </button>
+          </form>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h2 class="text-lg font-bold mb-3 text-slate-900"><i class="fa-solid fa-video text-blue-600 mr-2"></i> Promotional Video</h2>
+          <label class="block text-xs font-bold text-slate-500 mb-1">Choose Video File (MP4/WebM)</label>
+          <input type="file" id="video-file-input" accept="video/*" onchange="handleVideoUpload()" class="w-full text-xs text-slate-500 file:py-2 file:px-3 file:rounded-xl file:border-0 file:bg-blue-50 file:text-blue-700 cursor-pointer mb-3">
+          <button onclick="saveStoreVideo()" class="w-full bg-slate-900 text-white font-bold py-2.5 rounded-xl text-xs uppercase tracking-wider">Save Looping Video</button>
+        </div>
+      </div>
+
+      <div class="lg:col-span-2 space-y-6">
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h2 class="text-lg font-bold mb-4 text-slate-900"><i class="fa-solid fa-tags text-emerald-600 mr-2"></i> Active Store Coupons</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 border-b text-slate-500 font-bold uppercase text-xs">
+                <tr>
+                  <th class="p-3">Code</th>
+                  <th class="p-3">Discount</th>
+                  <th class="p-3">Expires</th>
+                  <th class="p-3">Status</th>
+                  <th class="p-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody id="admin-coupons-table" class="divide-y">
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
+          <h2 class="text-lg font-bold mb-4 text-slate-900"><i class="fa-solid fa-receipt text-blue-600 mr-2"></i> Orders Dashboard</h2>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm">
+              <thead class="bg-slate-50 border-b text-slate-500 font-bold uppercase text-xs">
+                <tr>
+                  <th class="p-3">Order ID</th>
+                  <th class="p-3">Customer</th>
+                  <th class="p-3">Item</th>
+                  <th class="p-3">Paid ($)</th>
+                  <th class="p-3">Status</th>
+                </tr>
+              </thead>
+              <tbody id="admin-orders-table" class="divide-y">
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- INSTANT BUY & PAYPAL CHECKOUT MODAL -->
+  <div id="checkout-modal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex justify-end hidden">
+    <div class="bg-white w-full max-w-md h-full shadow-2xl flex flex-col justify-between p-6 overflow-y-auto">
+      <div>
+        <div class="flex justify-between items-center border-b pb-4 mb-4">
+          <h2 class="text-xl font-black text-slate-900">Instant Checkout</h2>
+          <button onclick="toggleCheckoutModal()" class="text-slate-400 text-2xl font-bold">&times;</button>
+        </div>
+
+        <div id="checkout-product-summary" class="bg-slate-50 p-4 rounded-2xl border border-slate-100 mb-4">
+        </div>
+
+        <div class="bg-blue-50/50 p-4 rounded-2xl border border-blue-100 mb-6">
+          <label class="block text-xs font-bold uppercase text-slate-500 mb-1">Apply Discount Coupon</label>
+          <div class="flex gap-2">
+            <input type="text" id="coupon-input" placeholder="Enter Coupon Code" class="flex-grow p-2.5 text-sm border rounded-xl outline-none font-mono uppercase">
+            <button onclick="applyCoupon()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 py-2.5 rounded-xl">Apply</button>
+          </div>
+          <p id="coupon-msg" class="text-xs font-bold mt-2"></p>
+        </div>
+
+        <div class="space-y-3 mb-6">
+          <input type="text" id="cust-name" placeholder="Full Name *" required class="w-full p-3 border rounded-xl text-sm outline-none">
+          <input type="email" id="cust-email" placeholder="Email Address *" required class="w-full p-3 border rounded-xl text-sm outline-none">
+          <textarea id="cust-address" placeholder="Shipping Address *" required class="w-full p-3 border rounded-xl text-sm outline-none" rows="2"></textarea>
+          <p id="checkout-err-msg" class="text-xs text-rose-500 font-bold hidden">Please fill in all shipping details before paying.</p>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold uppercase text-slate-400 mb-2">Secure Online Payment</label>
+        <div id="paypal-button-container"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFORMATION MODAL -->
+  <div id="info-modal" class="fixed inset-0 bg-slate-900/70 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-xl w-full p-6 shadow-2xl relative max-h-[85vh] overflow-y-auto">
+      <button onclick="closeInfoModal()" class="absolute top-5 right-5 text-slate-400 hover:text-slate-600 text-2xl font-bold">&times;</button>
+      <div id="info-modal-content"></div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <footer class="bg-slate-900 text-slate-400 text-xs py-10 border-t border-slate-800">
+    <div class="max-w-7xl mx-auto px-6 grid grid-cols-1 md:grid-cols-4 gap-8">
+      <div>
+        <div class="flex items-center space-x-2 text-white font-black text-lg mb-3">
+          <i class="fa-brands fa-apple text-blue-500"></i>
+          <span>iRefurb<span class="text-blue-500">.</span></span>
+        </div>
+        <p class="leading-relaxed">Your trusted destination for premium certified refurbished Apple devices with full warranty protection.</p>
+      </div>
+
+      <div>
+        <h4 class="text-white font-bold text-sm mb-3">Quick Links</h4>
+        <ul class="space-y-2">
+          <li><button onclick="showView('store')" class="hover:text-white transition">Store Listings</button></li>
+          <li><button onclick="scrollToSupport()" class="hover:text-white transition">Help & FAQs</button></li>
+          <li><button onclick="openInfoModal('about')" class="hover:text-white transition">About iRefurb</button></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-bold text-sm mb-3">Customer Care</h4>
+        <ul class="space-y-2">
+          <li><button onclick="openInfoModal('contact')" class="hover:text-white transition">Contact Us</button></li>
+          <li><button onclick="openInfoModal('privacy')" class="hover:text-white transition">Privacy Policy</button></li>
+          <li><button onclick="scrollToSupport()" class="hover:text-white transition">Warranty & Returns</button></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4 class="text-white font-bold text-sm mb-3">Secure Payments</h4>
+        <p class="mb-3">All checkout transactions are encrypted and secured via PayPal Gateway.</p>
+        <div class="flex space-x-3 text-xl text-slate-300">
+          <i class="fa-brands fa-paypal"></i>
+          <i class="fa-brands fa-cc-visa"></i>
+          <i class="fa-brands fa-cc-mastercard"></i>
+        </div>
+      </div>
+    </div>
+    <div class="max-w-7xl mx-auto px-6 mt-8 pt-6 border-t border-slate-800 text-center text-slate-500">
+      &copy; 2026 iRefurb Pro. All rights reserved.
+    </div>
+  </footer>
+
+  <!-- APPLICATION LOGIC -->
+  <script>
+    let adminPassword = localStorage.getItem('irefurb_admin_pass') || 'admin123';
+    let promoVideoBase64 = localStorage.getItem('irefurb_video_file') || '';
+    let tempVideoBase64 = '';
+    let uploadedImagesBase64 = [];
+    let selectedProductForBuy = null;
+    let appliedDiscount = 0;
+
+    let products = JSON.parse(localStorage.getItem('irefurb_products_v3')) || [
+      { 
+        id: 1, 
+        name: 'iPhone 15 Pro', 
+        storage: '256GB', 
+        color: 'Natural Titanium', 
+        price: 899.00, 
+        rating: '5.0', 
+        reviews: 38, 
+        condition: 'Like New (98%+ Battery)', 
+        images: ['https://images.unsplash.com/photo-1695048133142-1a20484d2569?w=500', 'https://images.unsplash.com/photo-1663499482523-1c0c1bae4ce1?w=500'] 
+      }
+    ];
+
+    let storeCoupons = JSON.parse(localStorage.getItem('irefurb_coupons_v2')) || [
+      { code: 'SAVE80', discount: 80.00, expiry: '2026-12-31' },
+      { code: 'SAVE50', discount: 50.00, expiry: '2026-12-31' }
+    ];
+
+    let orders = JSON.parse(localStorage.getItem('irefurb_orders_v3')) || [];
+
+    function scrollToSupport() {
+      showView('store');
+      document.getElementById('support-section').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    function toggleFaq(id) {
+      const elem = document.getElementById(`faq-${id}`);
+      elem.classList.toggle('hidden');
+    }
+
+    function openInfoModal(type) {
+      const container = document.getElementById('info-modal-content');
+      if(type === 'about') {
+        container.innerHTML = `
+          <h2 class="text-2xl font-black text-slate-900 mb-3">About iRefurb Pro</h2>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            iRefurb Pro was built to give pre-owned Apple devices a high-quality second life. We believe buying refurbished shouldn't feel like a compromise.
+          </p>
+          <p class="text-xs text-slate-600 leading-relaxed">
+            Every iPhone sold through our store undergoes a meticulous 40+ point technical assessment covering camera clarity, battery health, cellular antenna test, and original OLED display validation.
+          </p>
+        `;
+      } else if (type === 'privacy') {
+        container.innerHTML = `
+          <h2 class="text-2xl font-black text-slate-900 mb-3">Privacy Policy</h2>
+          <p class="text-xs text-slate-600 leading-relaxed mb-3">
+            Your privacy matters to us. We collect personal information (Name, Email, Address) solely to process your orders and ship your purchased items.
+          </p>
+          <ul class="list-disc pl-4 text-xs text-slate-600 space-y-1 mb-3">
+            <li>Payment data is processed directly via PayPal encrypted servers.</li>
+            <li>We never store or log your credit card or bank details.</li>
+            <li>Your email address will never be sold or shared with third parties.</li>
+          </ul>
+        `;
+      } else if (type === 'contact') {
+        container.innerHTML = `
+          <h2 class="text-2xl font-black text-slate-900 mb-2">Contact Support</h2>
+          <p class="text-xs text-slate-500 mb-4">Have questions about an order or need hardware assistance?</p>
+          
+          <div class="space-y-3 text-xs text-slate-700">
+            <div class="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl border">
+              <i class="fa-solid fa-phone text-blue-600 text-lg"></i>
+              <div>
+                <div class="font-bold">Call Us</div>
+                <div class="text-slate-500">(740) 537-7354</div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl border">
+              <i class="fa-solid fa-envelope text-blue-600 text-lg"></i>
+              <div>
+                <div class="font-bold">Email Us</div>
+                <div class="text-slate-500">irefurb146@gmail.com</div>
+              </div>
+            </div>
+            <div class="flex items-center space-x-3 bg-slate-50 p-3 rounded-xl border">
+              <i class="fa-solid fa-clock text-emerald-600 text-lg"></i>
+              <div>
+                <div class="font-bold">Support Hours</div>
+                <div class="text-slate-500">Monday – Saturday: 9:00 AM – 6:00 PM EST</div>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      document.getElementById('info-modal').classList.remove('hidden');
+    }
+
+    function closeInfoModal() {
+      document.getElementById('info-modal').classList.add('hidden');
+    }
+
+    function filterProducts() {
+      const q = document.getElementById('search-input').value.toLowerCase();
+      const filtered = products.filter(p => p.name.toLowerCase().includes(q) || p.color.toLowerCase().includes(q));
+      renderProducts(filtered);
+    }
+
+    function showView(view) {
+      document.getElementById('store-view').classList.add('hidden');
+      document.getElementById('admin-view').classList.add('hidden');
+      if(view === 'admin') {
+        document.getElementById('admin-view').classList.remove('hidden');
+        renderAdmin();
+      } else {
+        document.getElementById('store-view').classList.remove('hidden');
+        renderProducts();
+        renderPromoVideo();
+      }
+    }
+
+    function initScratchCard() {
+      if(localStorage.getItem('irefurb_scratched')) {
+        document.getElementById('scratch-modal').classList.add('hidden');
+        return;
+      }
+
+      const canvas = document.getElementById('scratch-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.fillStyle = '#cbd5e1';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      let isDrawing = false;
+      let scratchedPixels = 0;
+
+      function scratch(e) {
+        if (!isDrawing) return;
+        const rect = canvas.getBoundingClientRect();
+        const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+        const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+
+        ctx.globalCompositeOperation = 'destination-out';
+        ctx.beginPath();
+        ctx.arc(x, y, 20, 0, Math.PI * 2);
+        ctx.fill();
+
+        scratchedPixels++;
+        if(scratchedPixels > 30) {
+          document.getElementById('coupon-revealed-box').classList.remove('hidden');
+          localStorage.setItem('irefurb_scratched', 'true');
+        }
+      }
+
+      canvas.addEventListener('mousedown', () => isDrawing = true);
+      canvas.addEventListener('mouseup', () => isDrawing = false);
+      canvas.addEventListener('mousemove', scratch);
+      canvas.addEventListener('touchstart', (e) => { isDrawing = true; scratch(e); });
+      canvas.addEventListener('touchend', () => isDrawing = false);
+      canvas.addEventListener('touchmove', scratch);
+    }
+
+    function applyRevealedCoupon() {
+      document.getElementById('scratch-modal').classList.add('hidden');
+      document.getElementById('coupon-input').value = "SAVE80";
+    }
+
+    function convertMultipleImagesToBase64() {
+      const files = document.getElementById('p-files').files;
+      uploadedImagesBase64 = [];
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          uploadedImagesBase64.push(e.target.result);
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    function handleVideoUpload() {
+      const file = document.getElementById('video-file-input').files[0];
+      if(!file) return;
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        tempVideoBase64 = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function saveStoreVideo() {
+      if(!tempVideoBase64) {
+        alert("Please select a video file first!");
+        return;
+      }
+      promoVideoBase64 = tempVideoBase64;
+      try {
+        localStorage.setItem('irefurb_video_file', promoVideoBase64);
+        alert("Looping promotional video uploaded successfully!");
+        renderPromoVideo();
+      } catch (err) {
+        alert("File size too large for local browser storage! Please choose a smaller clip.");
+      }
+    }
+
+    function renderPromoVideo() {
+      const container = document.getElementById('promo-video-container');
+      if(promoVideoBase64) {
+        container.innerHTML = `
+          <video class="w-full h-full object-cover" autoplay loop muted playsinline>
+            <source src="${promoVideoBase64}">
+            Your browser does not support video playback.
+          </video>
+        `;
+      } else {
+        container.innerHTML = `
+          <div class="text-center p-6 text-slate-500 text-xs">
+            <i class="fa-solid fa-film text-3xl mb-2 text-slate-600 block"></i>
+            No promotional video uploaded yet. Add one in Admin Dashboard.
+          </div>
+        `;
+      }
+    }
+
+    function renderProducts(itemsToRender = products) {
+      const grid = document.getElementById('product-grid');
+      if(itemsToRender.length === 0) {
+        grid.innerHTML = `<div class="col-span-full text-center text-slate-400 py-10">No items match your search.</div>`;
+        return;
+      }
+      grid.innerHTML = itemsToRender.map(item => `
+        <div class="bg-white rounded-2xl border border-slate-200 overflow-hidden flex flex-col justify-between hover:shadow-xl transition">
+          <div>
+            <div class="relative group h-56 bg-slate-100 overflow-hidden">
+              <img id="img-display-${item.id}" src="${item.images[0]}" class="h-full w-full object-cover transition duration-300">
+              ${item.images.length > 1 ? `
+                <button onclick="cycleProductImage(${item.id}, -1)" class="absolute left-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-chevron-left"></i></button>
+                <button onclick="cycleProductImage(${item.id}, 1)" class="absolute right-2 top-1/2 -translate-y-1/2 bg-black/40 text-white p-2 rounded-full text-xs opacity-0 group-hover:opacity-100 transition"><i class="fa-solid fa-chevron-right"></i></button>
+              ` : ''}
+              <span class="absolute top-3 left-3 bg-emerald-500 text-white font-bold text-xs px-2.5 py-1 rounded-lg">${item.condition}</span>
+            </div>
+            <div class="p-5">
+              <div class="flex items-center text-amber-400 text-xs font-bold gap-1 mb-1">
+                <i class="fa-solid fa-star"></i> <span>${item.rating}</span>
+                <span class="text-slate-400 font-medium">(${item.reviews || 10} reviews)</span>
+              </div>
+              <h3 class="font-black text-slate-900 text-lg">${item.name}</h3>
+              <p class="text-xs text-slate-500 mt-1">${item.storage} • ${item.color}</p>
+              <div class="text-2xl font-black text-blue-600 mt-3">$${item.price.toFixed(2)}</div>
+            </div>
+          </div>
+          <div class="p-5 pt-0">
+            <button onclick="openInstantBuyModal(${item.id})" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 rounded-xl text-xs uppercase tracking-wider transition shadow-lg shadow-blue-500/20">
+              Just Buy Now
+            </button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function cycleProductImage(id, direction) {
+      const prod = products.find(p => p.id === id);
+      if(!prod) return;
+      const imgElem = document.getElementById(`img-display-${id}`);
+      let currentIdx = prod.images.indexOf(imgElem.src);
+      if (currentIdx === -1) currentIdx = 0;
+      let newIdx = (currentIdx + direction + prod.images.length) % prod.images.length;
+      imgElem.src = prod.images[newIdx];
+    }
+
+    function openInstantBuyModal(id) {
+      selectedProductForBuy = products.find(p => p.id === id);
+      appliedDiscount = 0;
+      document.getElementById('coupon-input').value = '';
+      document.getElementById('coupon-msg').innerText = '';
+      document.getElementById('checkout-err-msg').classList.add('hidden');
+      updateCheckoutSummary();
+      toggleCheckoutModal();
+      renderPayPalButtons();
+    }
+
+    function toggleCheckoutModal() {
+      document.getElementById('checkout-modal').classList.toggle('hidden');
+    }
+
+    function applyCoupon() {
+      const inputCode = document.getElementById('coupon-input').value.trim().toUpperCase();
+      const msg = document.getElementById('coupon-msg');
+      const match = storeCoupons.find(c => c.code === inputCode);
+
+      if (!match) {
+        appliedDiscount = 0;
+        msg.className = "text-xs font-bold text-rose-500 mt-2";
+        msg.innerText = "Invalid Coupon Code.";
+        updateCheckoutSummary();
+        return;
+      }
+
+      const today = new Date().toISOString().split('T')[0];
+      if (match.expiry && match.expiry < today) {
+        appliedDiscount = 0;
+        msg.className = "text-xs font-bold text-rose-500 mt-2";
+        msg.innerText = `Coupon '${match.code}' expired on ${match.expiry}!`;
+      } else {
+        appliedDiscount = match.discount;
+        msg.className = "text-xs font-bold text-emerald-600 mt-2";
+        msg.innerText = `$${match.discount.toFixed(2)} Coupon Applied Successfully!`;
+      }
+      updateCheckoutSummary();
+    }
+
+    function updateCheckoutSummary() {
+      if(!selectedProductForBuy) return;
+      const finalPrice = Math.max(0, selectedProductForBuy.price - appliedDiscount);
+      document.getElementById('checkout-product-summary').innerHTML = `
+        <div class="flex gap-3 items-center">
+          <img src="${selectedProductForBuy.images[0]}" class="w-16 h-16 object-cover rounded-xl border">
+          <div>
+            <h4 class="font-bold text-sm text-slate-900">${selectedProductForBuy.name}</h4>
+            <p class="text-xs text-slate-500">${selectedProductForBuy.storage} • ${selectedProductForBuy.color}</p>
+            <div class="text-sm font-black text-slate-900 mt-1">
+              Price: <span class="${appliedDiscount > 0 ? 'line-through text-slate-400' : ''}">$${selectedProductForBuy.price.toFixed(2)}</span>
+              ${appliedDiscount > 0 ? `<span class="text-emerald-600 ml-2">$${finalPrice.toFixed(2)}</span>` : ''}
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPayPalButtons() {
+      const container = document.getElementById('paypal-button-container');
+      container.innerHTML = '';
+
+      paypal.Buttons({
+        createOrder: function(data, actions) {
+          const name = document.getElementById('cust-name').value.trim();
+          const email = document.getElementById('cust-email').value.trim();
+          const address = document.getElementById('cust-address').value.trim();
+
+          if(!name || !email || !address) {
+            document.getElementById('checkout-err-msg').classList.remove('hidden');
+            return false;
+          }
+
+          document.getElementById('checkout-err-msg').classList.add('hidden');
+          const finalPrice = Math.max(0, selectedProductForBuy.price - appliedDiscount);
+          return actions.order.create({
+            purchase_units: [{ amount: { value: finalPrice.toFixed(2) } }]
+          });
+        },
+        onApprove: function(data, actions) {
+          return actions.order.capture().then(function(details) {
+            const name = document.getElementById('cust-name').value || details.payer.name.given_name;
+            const email = document.getElementById('cust-email').value || details.payer.email_address;
+            const address = document.getElementById('cust-address').value || "Address on PayPal";
+            const finalPrice = Math.max(0, selectedProductForBuy.price - appliedDiscount);
+
+            const order = {
+              id: "ORD-" + Math.floor(100000 + Math.random() * 900000),
+              customer: name,
+              email: email,
+              address: address,
+              item: selectedProductForBuy.name,
+              paid: finalPrice,
+              status: "Paid - ID: " + details.id
+            };
+
+            orders.push(order);
+            localStorage.setItem('irefurb_orders_v3', JSON.stringify(orders));
+            alert(`Payment Successful!\nOrder ID: ${order.id}`);
+            toggleCheckoutModal();
+          });
+        }
+      }).render('#paypal-button-container');
+    }
+
+    function handleCouponCreate(e) {
+      e.preventDefault();
+      const code = document.getElementById('c-code').value.trim().toUpperCase();
+      const discount = parseFloat(document.getElementById('c-discount').value);
+      const expiry = document.getElementById('c-expiry').value;
+
+      if(storeCoupons.some(c => c.code === code)) {
+        alert("A coupon with this code already exists!");
+        return;
+      }
+
+      storeCoupons.push({ code, discount, expiry });
+      localStorage.setItem('irefurb_coupons_v2', JSON.stringify(storeCoupons));
+      
+      document.getElementById('c-code').value = '';
+      document.getElementById('c-discount').value = '';
+      document.getElementById('c-expiry').value = '';
+      renderAdmin();
+      alert(`Coupon '${code}' created successfully (Expires: ${expiry})!`);
+    }
+
+    function deleteCoupon(codeToDelete) {
+      if(confirm(`Are you sure you want to delete coupon ${codeToDelete}?`)) {
+        storeCoupons = storeCoupons.filter(c => c.code !== codeToDelete);
+        localStorage.setItem('irefurb_coupons_v2', JSON.stringify(storeCoupons));
+        renderAdmin();
+      }
+    }
+
+    function handleAdminAccess() {
+      const input = prompt("Enter Admin Password:");
+      if(input === adminPassword) showView('admin');
+      else if (input !== null) alert("Incorrect Password!");
+    }
+
+    function resetAdminPassword() {
+      const current = prompt("Enter current admin password:");
+      if(current === adminPassword) {
+        const newPass = prompt("Enter NEW admin password:");
+        if(newPass) {
+          adminPassword = newPass.trim();
+          localStorage.setItem('irefurb_admin_pass', adminPassword);
+          alert("Password updated!");
+        }
+      } else alert("Authentication failed.");
+    }
+
+    function handleProductAdd(e) {
+      e.preventDefault();
+      const fallbackUrl = 'https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?w=500';
+      const imgs = uploadedImagesBase64.length > 0 ? uploadedImagesBase64 : [fallbackUrl];
+
+      const newProd = {
+        id: Date.now(),
+        name: document.getElementById('p-name').value,
+        storage: document.getElementById('p-storage').value,
+        color: document.getElementById('p-color').value,
+        price: parseFloat(document.getElementById('p-price').value),
+        rating: document.getElementById('p-rating').value,
+        reviews: Math.floor(Math.random() * 15) + 5,
+        condition: document.getElementById('p-condition').value,
+        images: imgs
+      };
+
+      products.push(newProd);
+      localStorage.setItem('irefurb_products_v3', JSON.stringify(products));
+      document.getElementById('add-product-form').reset();
+      uploadedImagesBase64 = [];
+      renderProducts();
+      renderAdmin();
+      alert("Device added!");
+    }
+
+    function renderAdmin() {
+      const today = new Date().toISOString().split('T')[0];
+      const couponTable = document.getElementById('admin-coupons-table');
+      if(storeCoupons.length === 0) {
+        couponTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No active coupons.</td></tr>`;
+      } else {
+        couponTable.innerHTML = storeCoupons.map(c => {
+          const isExpired = c.expiry && c.expiry < today;
+          return `
+            <tr>
+              <td class="p-3 font-mono font-bold text-xs text-emerald-600">${c.code}</td>
+              <td class="p-3 font-bold text-slate-900">$${c.discount.toFixed(2)} OFF</td>
+              <td class="p-3 text-xs text-slate-500">${c.expiry || 'No Limit'}</td>
+              <td class="p-3">
+                <span class="px-2 py-0.5 rounded-full text-xs font-bold ${isExpired ? 'bg-rose-100 text-rose-800' : 'bg-emerald-100 text-emerald-800'}">
+                  ${isExpired ? 'Expired' : 'Active'}
+                </span>
+              </td>
+              <td class="p-3 text-right">
+                <button onclick="deleteCoupon('${c.code}')" class="text-rose-500 hover:text-rose-700 font-bold text-xs">Delete</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      const orderTable = document.getElementById('admin-orders-table');
+      if(orders.length === 0) {
+        orderTable.innerHTML = `<tr><td colspan="5" class="p-4 text-center text-slate-400">No orders placed yet.</td></tr>`;
+      } else {
+        orderTable.innerHTML = orders.map(o => `
+          <tr>
+            <td class="p-3 font-mono font-bold text-xs">${o.id}</td>
+            <td class="p-3"><div class="font-bold">${o.customer}</div><div class="text-xs text-slate-400">${o.email}</div></td>
+            <td class="p-3 text-xs">${o.item}</td>
+            <td class="p-3 font-bold text-slate-900">$${o.paid.toFixed(2)}</td>
+            <td class="p-3"><span class="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800">${o.status}</span></td>
+          </tr>
+        `).join('');
+      }
+    }
+
+    renderProducts();
+    renderPromoVideo();
+    initScratchCard();
+  </script>
+</body>
+</html>
